@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Media3D;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using OpenGE.Core;
+using OpenGE.Engine;
+using OpenGE.Launcher;
 
 namespace OpenGE
 {
@@ -13,58 +13,48 @@ namespace OpenGE
     {
         private Scene currentScene;
         private HwndSource hwndSource;
+        private string currentProjectPath;
+        private ContentManagerWindow contentManager;
+
+
 
         public MainWindow()
         {
             InitializeComponent();
-            currentScene = new Scene("Untitled");
             SetUpRendering();
         }
 
         private void SetUpRendering()
         {
-            // Set up rendering context if needed
-            UpdateRenderingSize((int)RenderViewport.ActualWidth, (int)RenderViewport.ActualHeight);
+            var hwndSourceParams = new HwndSourceParameters("RenderCanvas", (int)RenderCanvas.ActualWidth, (int)RenderCanvas.ActualHeight)
+            {
+                ParentWindow = new WindowInteropHelper(this).Handle,
+                WindowStyle = 0
+            };
+
+            hwndSource = new HwndSource(hwndSourceParams);
+            hwndSource.AddHook(WndProc);
+
+            UpdateRenderingSize((int)RenderCanvas.ActualWidth, (int)RenderCanvas.ActualHeight);
         }
 
         private void NewScene_Click(object sender, RoutedEventArgs e)
         {
             currentScene = new Scene("New Scene");
             MessageBox.Show($"Scene '{currentScene.Name}' created.");
-            RenderScene();
         }
 
         private void OpenScene_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "Scene Files (*.json)|*.json",
-                Title = "Open Scene"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                currentScene.Load(dialog.FileName);
-                MessageBox.Show($"Scene '{currentScene.Name}' opened.");
-                RenderScene();
-            }
+            MessageBox.Show("Open Scene clicked.");
         }
 
         private void SaveScene_Click(object sender, RoutedEventArgs e)
         {
             if (currentScene != null)
             {
-                var dialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "Scene Files (*.json)|*.json",
-                    Title = "Save Scene"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    currentScene.Save(dialog.FileName);
-                    MessageBox.Show($"Scene '{currentScene.Name}' saved.");
-                }
+                currentScene.Save("path/to/scene/file.json");
+                MessageBox.Show($"Scene '{currentScene.Name}' saved.");
             }
             else
             {
@@ -77,42 +67,93 @@ namespace OpenGE
             Application.Current.Shutdown();
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private void Undo_Click(object sender, RoutedEventArgs e)
         {
-            if (e.Key == Key.W)
-            {
-                // Example action for W key
-            }
+            MessageBox.Show("Undo clicked.");
         }
 
-        private void Window_MouseMove(object sender, MouseEventArgs e)
+        private void Redo_Click(object sender, RoutedEventArgs e)
         {
-            // Handle mouse movement
+            MessageBox.Show("Redo clicked.");
+        }
+
+        private void ToggleGrid_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Toggle Grid clicked.");
+        }
+
+        private void ImportAsset_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Import Asset clicked.");
+        }
+
+        private void BuildSettings_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Build Settings clicked.");
+        }
+
+        private void Layout1_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Layout 1 clicked.");
+        }
+
+        private void Layout2_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Layout 2 clicked.");
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // Update rendering size when the window is resized
-            UpdateRenderingSize((int)RenderViewport.ActualWidth, (int)RenderViewport.ActualHeight);
+            UpdateRenderingSize((int)RenderCanvas.ActualWidth, (int)RenderCanvas.ActualHeight);
         }
 
         private void UpdateRenderingSize(int width, int height)
         {
-            // Update viewport size if needed
-        }
-
-        private void RenderScene()
-        {
-            if (currentScene != null)
-            {
-                currentScene.Render(RenderViewport);
-            }
+            // Your rendering logic to handle the new width and height
         }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            // Handle Windows messages if needed
             return IntPtr.Zero;
+        }
+        
+        private void OpenContentManager_Click(object sender, RoutedEventArgs e)
+        {
+            ContentManagerWindow contentManager = new ContentManagerWindow();
+            contentManager.Show();
+        }
+
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            AboutOpenGEWindow aboutWindow = new AboutOpenGEWindow();
+            aboutWindow.Show();
+        }
+        private void NewProject_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Prompt the user for a project name
+                string projectName = "NewProject"; // Replace this with a prompt/dialogue to get input from the user
+
+                // Create the project
+                string projectPath = ProjectManager.CreateProject(projectName);
+
+                // Open the Content Manager and load the project directory
+                ContentManagerWindow contentManager = new ContentManagerWindow();
+                contentManager.LoadProjectDirectory(projectPath);
+                contentManager.Show();
+
+                MessageBox.Show($"Project '{projectName}' created at {projectPath}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to create project: {ex.Message}");
+            }
+        }
+        private void RefreshContent_Click(object sender, RoutedEventArgs e)
+        {
+            // Assuming you have a field or property storing the current project path
+            contentManager.LoadProjectDirectory(currentProjectPath);
         }
     }
 }
